@@ -31,7 +31,7 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_SI5351.git"
 # Internal constants:
 _SI5351_ADDRESS = const(0x60)  # Assumes ADDR pin = low
 _SI5351_READBIT = const(0x01)
-_SI5351_CRYSTAL_FREQUENCY = const(25000000)  # Fixed 25mhz crystal on board.
+_SI5351_CRYSTAL_FREQUENCY = 25000000  # Fixed 25mhz crystal on board.
 _SI5351_REGISTER_0_DEVICE_STATUS = const(0)
 _SI5351_REGISTER_1_INTERRUPT_STATUS_STICKY = const(1)
 _SI5351_REGISTER_2_INTERRUPT_STATUS_MASK = const(2)
@@ -411,6 +411,8 @@ class SI5351:
     def __init__(self, i2c: I2C, *, address: int = _SI5351_ADDRESS, input_clk: int = _SI5351_CRYSTAL_FREQUENCY) -> None:
         if not 25000000.0 <= input_clk <= 27000000.0:
             raise Exception("Clock Input not within 25MHz - 27MHz: %f0 MHz"%(input_clk/1000000.0))
+        
+        _SI5351_CRYSTAL_FREQUENCY = input_clk
         self._device = i2c_device.I2CDevice(i2c, address)
         # Setup the SI5351.
         # Disable all outputs setting CLKx_DIS high.
