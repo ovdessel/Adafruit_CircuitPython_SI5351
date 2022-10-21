@@ -140,7 +140,6 @@ class SI5351:
         if not 25000000.0 <= input_clk <= 27000000.0:
             raise Exception("Clock Input not within 25MHz - 27MHz: %f0 MHz"%(input_clk/1000000.0))
         
-        _SI5351_CRYSTAL_FREQUENCY = input_clk
         self._device = i2c_device.I2CDevice(i2c, address)
         # Setup the SI5351.
         # Disable all outputs setting CLKx_DIS high.
@@ -230,7 +229,7 @@ class SI5351:
             p3 = 1
             self._configure_registers(p1, p2, p3)
             # Calculate exact frequency and store it for reference.
-            fvco = _SI5351_CRYSTAL_FREQUENCY * multiplier
+            fvco = input_clk * multiplier
             # This should actually take the floor to get the true value but
             # there's a limit on how big a value the floor can be and it's
             # easy to hit with high megahertz frequencies:
@@ -266,7 +265,7 @@ class SI5351:
             p3 = denominator
             self._configure_registers(p1, p2, p3)
             # Calculate exact frequency and store it for reference.
-            fvco = _SI5351_CRYSTAL_FREQUENCY * (multiplier + (numerator / denominator))
+            fvco = input_clk * (multiplier + (numerator / denominator))
             # This should actually take the floor to get the true value but
             # there's a limit on how big a value the floor can be and it's
             # easy to hit with high megahertz frequencies:
