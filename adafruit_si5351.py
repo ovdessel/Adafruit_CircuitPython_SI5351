@@ -408,7 +408,9 @@ class SI5351:
     # This is not thread-safe or re-entrant by design!
     _BUFFER = bytearray(2)
 
-    def __init__(self, i2c: I2C, *, address: int = _SI5351_ADDRESS) -> None:
+    def __init__(self, i2c: I2C, *, address: int = _SI5351_ADDRESS, input_clk: int = _SI5351_CRYSTAL_FREQUENCY) -> None:
+        if not 25000000.0 < input_clk < 27000000.0:
+            rasie Exception("Clock Input not within 25MHz - 27MHz: %f0 MHz"%(input_clk/1000000.0)
         self._device = i2c_device.I2CDevice(i2c, address)
         # Setup the SI5351.
         # Disable all outputs setting CLKx_DIS high.
