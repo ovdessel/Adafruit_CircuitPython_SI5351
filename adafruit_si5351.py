@@ -135,6 +135,47 @@ R_DIV_128 = 7
 
 
 class SI5351:
+    
+    def __init__(self, i2c: I2C, *, address: int = _SI5351_ADDRESS, input_clk: int = 25000000) -> None:
+        if not 25000000.0 <= input_clk <= 27000000.0:
+            raise Exception("Clock Input not within 25MHz - 27MHz: %f0 MHz"%(input_clk/1000000.0))
+        
+        _SI5351_CRYSTAL_FREQUENCY = input_clk
+        self._device = i2c_device.I2CDevice(i2c, address)
+        # Setup the SI5351.
+        # Disable all outputs setting CLKx_DIS high.
+        self._write_u8(_SI5351_REGISTER_3_OUTPUT_ENABLE_CONTROL, 0xFF)
+        # Power down all output drivers
+        self._write_u8(_SI5351_REGISTER_16_CLK0_CONTROL, 0x80)
+        self._write_u8(_SI5351_REGISTER_17_CLK1_CONTROL, 0x80)
+        self._write_u8(_SI5351_REGISTER_18_CLK2_CONTROL, 0x80)
+        self._write_u8(_SI5351_REGISTER_19_CLK3_CONTROL, 0x80)
+        self._write_u8(_SI5351_REGISTER_20_CLK4_CONTROL, 0x80)
+        self._write_u8(_SI5351_REGISTER_21_CLK5_CONTROL, 0x80)
+        self._write_u8(_SI5351_REGISTER_22_CLK6_CONTROL, 0x80)
+        self._write_u8(_SI5351_REGISTER_23_CLK7_CONTROL, 0x80)
+        # Initialize PLL A and B objects.
+        self.pll_a = self._PLL(self, 26, 0)
+        self.pll_b = self._PLL(self, 34, (1 << 5))
+        # Initialize the 3 clock outputs.
+        self.clock_0 = self._Clock(
+            self,
+            _SI5351_REGISTER_42_MULTISYNTH0_PARAMETERS_1,
+            _SI5351_REGISTER_16_CLK0_CONTROL,
+            _SI5351_REGISTER_44_MULTISYNTH0_PARAMETERS_3,
+        )
+        self.clock_1 = self._Clock(
+            self,
+            _SI5351_REGISTER_50_MULTISYNTH1_PARAMETERS_1,
+            _SI5351_REGISTER_17_CLK1_CONTROL,
+            _SI5351_REGISTER_52_MULTISYNTH1_PARAMETERS_3,
+        )
+        self.clock_2 = self._Clock(
+            self,
+            _SI5351_REGISTER_58_MULTISYNTH2_PARAMETERS_1,
+            _SI5351_REGISTER_18_CLK2_CONTROL,
+            _SI5351_REGISTER_60_MULTISYNTH2_PARAMETERS_3,
+        )
     """SI5351 clock generator.  Initialize this class by specifying:
      - i2c: The I2C bus connected to the chip.
 
@@ -408,47 +449,6 @@ class SI5351:
     # Class-level buffer to reduce allocations and heap fragmentation.
     # This is not thread-safe or re-entrant by design!
     _BUFFER = bytearray(2)
-
-    def __init__(self, i2c: I2C, *, address: int = _SI5351_ADDRESS, input_clk: int = 25000000) -> None:
-        if not 25000000.0 <= input_clk <= 27000000.0:
-            raise Exception("Clock Input not within 25MHz - 27MHz: %f0 MHz"%(input_clk/1000000.0))
-        
-        _SI5351_CRYSTAL_FREQUENCY = input_clk
-        self._device = i2c_device.I2CDevice(i2c, address)
-        # Setup the SI5351.
-        # Disable all outputs setting CLKx_DIS high.
-        self._write_u8(_SI5351_REGISTER_3_OUTPUT_ENABLE_CONTROL, 0xFF)
-        # Power down all output drivers
-        self._write_u8(_SI5351_REGISTER_16_CLK0_CONTROL, 0x80)
-        self._write_u8(_SI5351_REGISTER_17_CLK1_CONTROL, 0x80)
-        self._write_u8(_SI5351_REGISTER_18_CLK2_CONTROL, 0x80)
-        self._write_u8(_SI5351_REGISTER_19_CLK3_CONTROL, 0x80)
-        self._write_u8(_SI5351_REGISTER_20_CLK4_CONTROL, 0x80)
-        self._write_u8(_SI5351_REGISTER_21_CLK5_CONTROL, 0x80)
-        self._write_u8(_SI5351_REGISTER_22_CLK6_CONTROL, 0x80)
-        self._write_u8(_SI5351_REGISTER_23_CLK7_CONTROL, 0x80)
-        # Initialize PLL A and B objects.
-        self.pll_a = self._PLL(self, 26, 0)
-        self.pll_b = self._PLL(self, 34, (1 << 5))
-        # Initialize the 3 clock outputs.
-        self.clock_0 = self._Clock(
-            self,
-            _SI5351_REGISTER_42_MULTISYNTH0_PARAMETERS_1,
-            _SI5351_REGISTER_16_CLK0_CONTROL,
-            _SI5351_REGISTER_44_MULTISYNTH0_PARAMETERS_3,
-        )
-        self.clock_1 = self._Clock(
-            self,
-            _SI5351_REGISTER_50_MULTISYNTH1_PARAMETERS_1,
-            _SI5351_REGISTER_17_CLK1_CONTROL,
-            _SI5351_REGISTER_52_MULTISYNTH1_PARAMETERS_3,
-        )
-        self.clock_2 = self._Clock(
-            self,
-            _SI5351_REGISTER_58_MULTISYNTH2_PARAMETERS_1,
-            _SI5351_REGISTER_18_CLK2_CONTROL,
-            _SI5351_REGISTER_60_MULTISYNTH2_PARAMETERS_3,
-        )
 
     def _read_u8(self, address: int) -> int:
         # Read an 8-bit unsigned value from the specified 8-bit address.
