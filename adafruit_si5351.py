@@ -140,6 +140,7 @@ class SI5351:
 
     Optionally specify:
      - address: The I2C address of the device if it differs from the default.
+     - input_clk: the attached crystal frequency
     """
 
     # Internal class to represent a PLL on the SI5351.  There are two instances
@@ -412,7 +413,7 @@ class SI5351:
         if not 25000000.0 <= input_clk <= 27000000.0:
             raise Exception("Clock Input not within 25MHz - 27MHz: %f0 MHz"%(input_clk/1000000.0))
         
-        #_SI5351_CRYSTAL_FREQUENCY = input_clk
+        _SI5351_CRYSTAL_FREQUENCY = input_clk
         self._device = i2c_device.I2CDevice(i2c, address)
         # Setup the SI5351.
         # Disable all outputs setting CLKx_DIS high.
